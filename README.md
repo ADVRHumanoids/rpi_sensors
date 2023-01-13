@@ -33,3 +33,4 @@ forest grow rpi_sensors --clone-protocol https
 To always have the workspace source: `echo $PWD/setup.bash >> ~/.bashrc`
 
 To run the receiver node: `rosrun udp_cam_receiver udp_cam_receiver _remote_addr:=<RPI_IP_ADDR> _remote_port:=8080`
+The video stream can then be seen with (e.g.) `rqt_image_view`
