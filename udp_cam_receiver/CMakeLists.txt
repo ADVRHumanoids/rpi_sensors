@@ -13,43 +13,22 @@ find_package(catkin REQUIRED COMPONENTS
 
 catkin_package()
 
+find_package(PkgConfig)
+pkg_check_modules(ffmpeg REQUIRED libavcodec libavutil libswscale IMPORTED_TARGET)
+
 include_directories(${catkin_INCLUDE_DIRS})
 
-find_library(x264_LIBRARY x264)
+add_executable(udp_cam_receiver
+    udp_cam_receiver.cpp
+    udp_socket.cpp
+)
 
-if(NOT x264_LIBRARY)
-    message(WARNING "x264 library not found, not building senders...")
-endif()
+target_link_libraries(udp_cam_receiver
+    ${catkin_LIBRARIES}
+    PkgConfig::ffmpeg
+)
 
-find_library(LIBAVUTIL_LIBRARY avutil HINTS /opt/ffmpeg/lib)
-find_library(LIBAVCODEC_LIBRARY avcodec HINTS /opt/ffmpeg/lib)
-find_library(LIBSWSCALE_LIBRARY swscale HINTS /opt/ffmpeg/lib)
+install(TARGETS udp_cam_receiver
+    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
-set(FFMPEG_INCLUDE_PATH "/opt/ffmpeg/include" CACHE PATH "path to libavcodec/avcodec.h")
-include_directories(${FFMPEG_INCLUDE_PATH})
-
-if(NOT LIBAVCODEC_LIBRARY OR NOT FFMPEG_INCLUDE_PATH)
-    message(WARNING "Could not find ffmpeg libraries, not building receivers...")
-endif()
-
-
-if(LIBAVCODEC_LIBRARY AND EXISTS ${FFMPEG_INCLUDE_PATH})
-    
-    add_executable(udp_cam_receiver
-        udp_cam_receiver.cpp
-        udp_socket.cpp
-    )
-
-    target_link_libraries(udp_cam_receiver
-        ${catkin_LIBRARIES}
-        ${LIBAVUTIL_LIBRARY}
-        ${LIBAVCODEC_LIBRARY}
-        ${LIBSWSCALE_LIBRARY}
-    )
-
-    install(TARGETS udp_cam_receiver
-        DESTINATION ${CATKIN_PACKAGE_BIN_DIR}
-    )
-else()
-    message(FATAL "libavcodec not found")
-endif()
