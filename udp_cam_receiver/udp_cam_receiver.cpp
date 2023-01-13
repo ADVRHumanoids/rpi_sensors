@@ -16,7 +16,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "udp_cam_receiver");
     ros::NodeHandle nh("~");
 
-    // udp server endpoint
+    // udp client endpoint
     UdpClientRaw udp;
 
     // remote address
@@ -35,23 +35,12 @@ int main(int argc, char **argv)
         exit(1);
     }
 
+    // set timeout for read operations
+    udp.set_timeout(1.0);
+
     // allocate a buffer
     const int buffer_size = 65536;
     uint8_t buffer[buffer_size];
-
-    // try to reach server
-    ROS_INFO("contacting server at %s:%d..", remote_addr.c_str(), remote_port);
-    bool srv_msg_recv = false;
-    while(!srv_msg_recv)
-    {
-        // send a dummy msg for now
-        uint32_t msg_cli_to_srv = 0xdeadbeef;
-        udp.try_send(reinterpret_cast<uint8_t*>(&msg_cli_to_srv),
-                     sizeof(msg_cli_to_srv));
-
-        // try to receive from server
-        srv_msg_recv = udp.try_receive(buffer, buffer_size);
-    }
 
     // allocate libav data struct
     SwsContext* g_sws = 0;
@@ -83,6 +72,27 @@ int main(int argc, char **argv)
     {
         // blocking receive
         msg_size = udp.receive(buffer, buffer_size);
+
+        // server does not reply within 1 sec
+        if(msg_size == -1)
+        {
+            // try to reach server
+            bool srv_msg_recv = false;
+            while(!srv_msg_recv)
+            {
+                ROS_INFO_THROTTLE(1.0,
+                                  "contacting server at %s:%d..",
+                                  remote_addr.c_str(), remote_port);
+                // send a dummy msg for now
+                uint32_t msg_cli_to_srv = 0xdeadbeef;
+                udp.try_send(reinterpret_cast<uint8_t*>(&msg_cli_to_srv),
+                             sizeof(msg_cli_to_srv));
+
+                // try to receive from server
+                msg_size = udp.try_receive(buffer, buffer_size);
+                srv_msg_recv = msg_size > 0;
+            }
+        }
 
         // consume buffer
         for(;;)
