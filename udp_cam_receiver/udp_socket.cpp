@@ -196,3 +196,18 @@ int UdpClientRaw::receive(uint8_t *buffer, size_t size)
 
     return ret;
 }
+
+bool UdpClientRaw::set_timeout(double to_sec)
+{
+    struct timeval tv;
+    tv.tv_sec = int(to_sec);
+    tv.tv_usec = (to_sec - tv.tv_sec)*1e6;
+
+    if(setsockopt(_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
+    {
+        perror("set_timeout");
+        return false;
+    }
+
+    return true;
+}

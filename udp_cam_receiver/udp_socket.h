@@ -92,6 +92,9 @@ public:
     // blocking receive
     int receive(uint8_t * buffer, size_t size);
 
+    // set clocking receive timeout
+    bool set_timeout(double to_sec);
+
 
 private:
 
