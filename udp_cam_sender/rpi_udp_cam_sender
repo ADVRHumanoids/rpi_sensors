@@ -30,7 +30,10 @@ class StreamingOutput(object):
         # try to receive a message from the client, so we can know its address
         try:
             bufsize = 1024
-            bytes, self.remote_addr = self.sock.recvfrom(bufsize, socket.MSG_DONTWAIT)
+            bytes, new_remote_addr = self.sock.recvfrom(bufsize, socket.MSG_DONTWAIT)
+            if new_remote_addr != self.remote_addr:
+                print(f'got new client: {new_remote_addr}')
+                self.remote_addr = new_remote_addr
         except BlockingIOError:
             pass
         
@@ -66,6 +69,7 @@ with picamera.PiCamera(resolution='640x480', framerate=30) as camera:
     camera.rotation = 0
     camera.start_recording(output, format='h264', bitrate=30*10000*8)
     try:
-        camera.wait_recording()
+        while True:
+            camera.wait_recording(1.0)
     finally:
         camera.stop_recording()
