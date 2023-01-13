@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+
+# Web streaming example
+# Source code from the official PiCamera package
+# http://picamera.readthedocs.io/en/latest/recipes2.html#web-streaming
+
+import io
+import picamera
+import logging
+from threading import Condition
+import socket
+import argparse
+
+
+class StreamingOutput(object):
+
+    def __init__(self, addr):
+        self.addr = addr
+        self.frame = None
+        self.buffer = io.BytesIO()
+        self.condition = Condition()
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.bind(self.addr)
+        print(f'Listening on {self.addr}')
+        self.remote_addr = None
+        self.separator = b'\x00\x00\x00\x01'
+
+    def write(self, buf):
+        
+        # try to receive a message from the client, so we can know its address
+        try:
+            bufsize = 1024
+            bytes, self.remote_addr = self.sock.recvfrom(bufsize, socket.MSG_DONTWAIT)
+        except BlockingIOError:
+            pass
+        
+        # check if we are getting the beginning of a frame
+        if buf.startswith(self.separator):
+            
+            # new frame, copy the existing buffer's content and notify all
+            # clients it's available
+            self.buffer.truncate()
+            with self.condition:
+                self.frame = self.buffer.getvalue()
+                if self.remote_addr is not None:
+                    self.sock.sendto(self.frame, socket.MSG_DONTWAIT, self.remote_addr)
+                self.condition.notify_all()
+            self.buffer.seek(0)
+        
+        # write data to buffer
+        return self.buffer.write(buf)
+
+
+# parse cmd line arguments
+parser = argparse.ArgumentParser(prog='rpi_udp_cam_sender', 
+    description='A simple Python script to acquire a video stream from a RaspberryPi camera, encode it to h264, and send it over UDP')
+parser.add_argument('--port', '-p', required=False, default=8080, help='Local port to bind to')
+parser.add_argument('--bitrate', '-b', required=False, default=30*8*10000, help='Max bitrate')
+args = parser.parse_args()
+
+# create output (UDP) streaming object
+output = StreamingOutput(addr=('0.0.0.0', args.port))
+
+with picamera.PiCamera(resolution='640x480', framerate=30) as camera:
+    
+    camera.rotation = 0
+    camera.start_recording(output, format='h264', bitrate=30*10000*8)
+    try:
+        camera.wait_recording()
+    finally:
+        camera.stop_recording()

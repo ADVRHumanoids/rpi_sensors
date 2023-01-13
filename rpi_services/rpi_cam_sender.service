@@ -1,0 +1,12 @@
+[Unit]
+Description=UDP RPI Camera Sender
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/bin/bash -ic 'source %h/.bashrc; rpi_udp_cam_sender'
+Restart=always
+RestartSec=2s
+
+[Install]
+WantedBy=default.target
