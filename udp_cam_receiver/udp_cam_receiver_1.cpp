@@ -4,6 +4,9 @@
 
 using namespace std::string_literals;
 
+// to stream, use the following command (or similar)
+// ffmpeg -f v4l2 -i /dev/video0 -vcodec libx264 -preset ultrafast -tune zerolatency -g 25 -b:v 900k -f h264 tcp://:8080?listen=1
+
 int main(int argc, char **argv)
 {
     // ros
