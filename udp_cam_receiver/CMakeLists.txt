@@ -14,13 +14,14 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package()
 
 find_package(PkgConfig)
-pkg_check_modules(ffmpeg REQUIRED libavcodec libavutil libswscale IMPORTED_TARGET)
+pkg_check_modules(ffmpeg REQUIRED libavcodec libavutil libswscale  libavfilter libavformat IMPORTED_TARGET)
 
 include_directories(${catkin_INCLUDE_DIRS})
 
 add_executable(udp_cam_receiver
-    udp_cam_receiver.cpp
+    udp_cam_receiver_1.cpp
     udp_socket.cpp
+    video_decoder.cpp
 )
 
 target_link_libraries(udp_cam_receiver
