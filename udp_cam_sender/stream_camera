@@ -1,0 +1,2 @@
+#!/bin/bash
+ffmpeg -f v4l2 -i /dev/video0 -framerate 30 -vcodec libx264 -tune zerolatency -preset ultrafast -g 25 -b:v 900k -f h264 tcp://:8080?listen=1
