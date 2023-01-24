@@ -76,7 +76,7 @@ VideoDecoder::Impl::Impl(std::string url, std::string format)
         throw std::runtime_error("could not open input at " + url);
     }
 
-    printf("avformat_open_input SUCCESS");
+    printf("avformat_open_input SUCCESS \n");
 
     // retrieve stream information
     if(avformat_find_stream_info(fmt_ctx, NULL) < 0)
