@@ -76,13 +76,15 @@ VideoDecoder::Impl::Impl(std::string url, std::string format)
         throw std::runtime_error("could not open input at " + url);
     }
 
+    printf("avformat_open_input SUCCESS");
+
     // retrieve stream information
     if(avformat_find_stream_info(fmt_ctx, NULL) < 0)
     {
         throw std::runtime_error("could not find stream information");
     }
 
-    printf("Ok");
+    printf("avformat_find_stream_info SUCCESS \n");
 
     // open video context
     if(open_codec_context(&video_stream_idx, fmt_ctx, AVMEDIA_TYPE_VIDEO) < 0)
@@ -106,10 +108,6 @@ VideoDecoder::decode_ret_t VideoDecoder::Impl::decode(sensor_msgs::Image &img)
     {
         return decode_ret_t::end_of_stream;
     }
-
-    fprintf(stderr, "Video frame size %d\r\n", avpkt.size);
-
-    int got_frame = 0;
 
     // This function might fail because of parameter set packets, just ignore and continue
     int ret = avcodec_send_packet(video_dec_ctx, &avpkt);
@@ -156,7 +154,7 @@ VideoDecoder::decode_ret_t VideoDecoder::Impl::decode(sensor_msgs::Image &img)
 
     sws_ctx = sws_getCachedContext(
                 sws_ctx,
-                frame->width, frame->height, AV_PIX_FMT_YUV422P,
+                frame->width, frame->height, AVPixelFormat(frame->format),
                 frame->width, frame->height, AV_PIX_FMT_RGB24,
                 0, 0, 0, 0
                 );
@@ -205,6 +203,8 @@ int VideoDecoder::Impl::open_codec_context(int *stream_idx,
             return ret;
         }
 
+        printf("avcodec_find_decoder SUCCESS \n");
+
         // allocate context for decoder
         video_dec_ctx = avcodec_alloc_context3(dec);
         avcodec_parameters_to_context(video_dec_ctx, dec_param);
@@ -215,6 +215,8 @@ int VideoDecoder::Impl::open_codec_context(int *stream_idx,
                     av_get_media_type_string(type));
             return ret;
         }
+
+        printf("avcodec_open2 SUCCESS \n");
     }
     return 0;
 }

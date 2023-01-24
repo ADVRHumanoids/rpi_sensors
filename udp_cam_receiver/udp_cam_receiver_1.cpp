@@ -13,22 +13,21 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "udp_cam_receiver");
     ros::NodeHandle nhpr("~"), nh;
     ros::Publisher pub = nhpr.advertise<sensor_msgs::Image>("image", 1);
+    std::string frame_id = "cam";
+    nhpr.getParam("frame_id", frame_id);
 
     while(ros::ok()) try
     {
         // decoder
         // depending on the protocol, this might wait until headers are received (udp),
         // or try to initiate a connection (tcp)
-        rpi_sensors::VideoDecoder decoder(nhpr.param("url", "tcp://10.240.23.65:8080"s),
+        rpi_sensors::VideoDecoder decoder(nhpr.param("url", "tcp://127.0.0.1:8080"s),
                                           nhpr.param("format", "h264"s));
 
         using decode_ret_t = rpi_sensors::VideoDecoder::decode_ret_t;
 
         // loop
         sensor_msgs::Image img;
-
-        // rate limit loop
-        ros::Rate rate(1./100.);  // max 100 fps
 
         for(;;)
         {
@@ -38,7 +37,7 @@ int main(int argc, char **argv)
             // got frame
             if(ret == decode_ret_t::got_frame)
             {
-                img.header.frame_id = nhpr.param("frame_id", "cam"s);
+                img.header.frame_id = frame_id;
                 pub.publish(img);
             }
 
@@ -48,8 +47,6 @@ int main(int argc, char **argv)
                 ROS_INFO("end of stream, exiting..");
                 break;
             }
-
-            rate.sleep();
         }
 
     }
