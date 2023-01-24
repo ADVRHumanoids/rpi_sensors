@@ -58,7 +58,7 @@ class StreamingOutput(object):
 parser = argparse.ArgumentParser(prog='rpi_udp_cam_sender', 
     description='A simple Python script to acquire a video stream from a RaspberryPi camera, encode it to h264, and send it over UDP')
 parser.add_argument('--port', '-p', required=False, default=8080, help='Local port to bind to')
-parser.add_argument('--bitrate', '-b', required=False, default=30*8*10000, help='Max bitrate')
+parser.add_argument('--bitrate', '-b', required=False, default=30*8*10000, type=int, help='Max bitrate')
 args = parser.parse_args()
 
 # create output (UDP) streaming object
@@ -67,7 +67,7 @@ output = StreamingOutput(addr=('0.0.0.0', args.port))
 with picamera.PiCamera(resolution='640x480', framerate=30) as camera:
     
     camera.rotation = 0
-    camera.start_recording(output, format='h264', bitrate=30*10000*8)
+    camera.start_recording(output, format='h264', bitrate=int(args.bitrate))
     try:
         while True:
             camera.wait_recording(1.0)
